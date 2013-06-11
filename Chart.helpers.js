@@ -1,34 +1,19 @@
-﻿function mergeChartConfig(defaults, userDefined) {
-    var returnObj = {};
-    var attrname;
-    for (attrname in defaults) { returnObj[attrname] = defaults[attrname]; }
-    for (attrname in userDefined) { returnObj[attrname] = userDefined[attrname]; }
-    return returnObj;
-}
-
-//Apply cap a value at a high or low number
-function capValue(valueToCap, maxValue, minValue) {
-    if (isNumber(maxValue)) {
-        if (valueToCap > maxValue) {
-            return maxValue;
-        }
-    }
-    if (isNumber(minValue)) {
-        if (valueToCap < minValue) {
-            return minValue;
-        }
-    }
-    return valueToCap;
-}
-
-//Is a number function
-function isNumber(n) {
-    return !isNaN(parseFloat(n)) && isFinite(n);
-}
+﻿Charts.colors = [
+    "69, 117, 180",
+    "215, 48, 39",
+    "254, 224, 144",
+    "171, 217, 233",
+    "165, 0, 38",
+    "49, 54, 149",
+    "224, 243, 248",
+    "244, 109, 67",
+    "116, 173, 209",
+    "253, 174, 97"
+];
 
 //Easing functions adapted from Robert Penner's easing equations
 //http://www.robertpenner.com/easing/
-var animationOptions = {
+Charts.animationOptions = {
     linear: function (t) {
         return t;
     },
@@ -175,14 +160,13 @@ var animationOptions = {
 };
 
 //Javascript micro templating by John Resig - source at http://ejohn.org/blog/javascript-micro-templating/
-var cache = {};
-
-function tmpl(str, data) {
+Charts.template = function (str, data) {
+    if (typeof str == "undefined") str = "<%=value%>";
     // Figure out if we're getting a template, or if we need to
     // load the template - and be sure to cache the result.
     var fn = !/\W/.test(str) ?
-      cache[str] = cache[str] ||
-        tmpl(document.getElementById(str).innerHTML) :
+      Charts.cache[str] = Charts.cache[str] ||
+        Charts.template(document.getElementById(str).innerHTML) :
 
       // Generate a reusable function that will serve as a template
       // generator (and which will be cached).

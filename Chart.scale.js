@@ -1,32 +1,4 @@
-﻿//Canvas - 	Height 
-//			Width
-//			Margin = 5
-//			labelMargin = 5
-
-//YAxis[0] - top.x = Margin + MaxWidth(YAxis[0].label) + labelMargin
-//YAxis[0] - top.y = Margin
-//YAxis[0] - bottom.x = Margin + MaxWidth(YAxis[0].label) + labelMargin
-//YAxis[0] - bottom.y = Height - 2*Margin - MaxWidth(XAxis.label) - labelMargin
-
-//YAxis[1] - top.x = Width - Margin + MaxWidth(YAxis[1].label) + labelMargin
-//YAxis[1] - top.y = Margin
-//YAxis[1] - bottom.x = Width - Margin + MaxWidth(YAxis[1].label) + labelMargin
-//YAxis[1] - bottom.y = Height - 2*Margin - MaxWidth(XAxis.label) - labelMargin
-
-//XAxis - left.x = Margin + MaxWidth(YAxis[0].label) + labelMargin
-//XAxis - left.y = positionBase.YAxis[0] 
-//XAxis - right.x = Width - Margin + MaxWidth(YAxis[1].label) + labelMargin
-//XAxis - right.y = positionBase.YAxis[0] 
-
-//DrawingSize.top.x = YAxis[0].top.x
-//DrawingSize.top.y = YAxis[0].top.y
-//DrawingSize.height = YAxis[0].bottom.y - YAxis[0].top.y
-//DrawingSize.width = XAxis.right.x - XAxis.left.x
-
-
-
-
-Chart.prototype.Scale = function (ctx, yAxis, xAxis, height, width) {
+﻿Chart.prototype.Scale = function (ctx, yAxis, xAxis, height, width) {
 
     var graphMargin = 5;
     var labelMargin = 5;
@@ -63,11 +35,27 @@ Chart.prototype.Scale = function (ctx, yAxis, xAxis, height, width) {
         // degrees the xAxis labels are rotated
         xAxisRotateLabels: 0,
         
+        stackedBarPositive: [],
+        stackedBarNegative: [],
+
         calculateOffset: function(val, yAxisIndex) {
-             var outerValue = scale.yAxis[yAxisIndex].NumberOfSteps * scale.yAxis[yAxisIndex].StepValue;
-             var adjustedValue = val - scale.yAxis[yAxisIndex].Base;
+            var outerValue = scale.yAxis[yAxisIndex].NumberOfSteps * scale.yAxis[yAxisIndex].StepValue;
+            var adjustedValue = val - scale.yAxis[yAxisIndex].Base;
             var scalingFactor = capValue(adjustedValue / outerValue, 1, -1);
             return (scale.yAxis[yAxisIndex].Hop * scale.yAxis[yAxisIndex].NumberOfSteps) * scalingFactor;
+        },
+        yStackedBase: function (val, xAxisLabelIndex, yAxisIndex) {
+            return (val >= scale.yAxis[yAxisIndex].Base) ? scale.stackedBarPositive[xAxisLabelIndex] : scale.stackedBarNegative[xAxisLabelIndex];
+        },
+        yStackedRebase: function (val, xAxisLabelIndex, yAxisIndex, newBase) {
+            if (val >= scale.yAxis[yAxisIndex].Base) {
+                scale.stackedBarPositive[xAxisLabelIndex] = newBase;
+            } else {
+                scale.stackedBarNegative[xAxisLabelIndex] = newBase;
+            }
+        },
+        yStackedPos: function(val, pct, yAxisIndex, xAxisLabelIndex) {
+            return scale.yStackedBase(val, xAxisLabelIndex, yAxisIndex) - pct * (scale.calculateOffset(val, yAxisIndex));
         },
         yPos: function (val, pct, yAxisIndex) {
             return scale.xAxisPosY - pct * (scale.calculateOffset(val, yAxisIndex));
@@ -123,6 +111,9 @@ Chart.prototype.Scale = function (ctx, yAxis, xAxis, height, width) {
         var maxSize;
         scale.xAxisLabelHeight = widestXLabel + labelMargin;
         maxSize = height - 2 * graphMargin - scale.xAxisLabelHeight;
+        if (xAxis.showTitle) {
+            maxSize = maxSize - xAxis.fontSize - labelMargin;
+        }
         scale.yAxis[0].Length = maxSize;
         scale.xAxisPosY = scale.yAxis[0].PosMin = scale.yAxis[0].Length + graphMargin;
         scale.yAxis[0].Hop = scale.yAxis[0].Length / scale.yAxis[0].NumberOfSteps;
@@ -130,7 +121,7 @@ Chart.prototype.Scale = function (ctx, yAxis, xAxis, height, width) {
         var longestText = 1;
         //if we are showing the labels
         if (yAxis[0].showLabels) {
-            ctx.font = xAxis.fontStyle + " " + xAxis.fontSize + "px " + xAxis.fontFamily;
+            ctx.font = yAxis[0].fontStyle + " " + yAxis[0].fontSize + "px " + yAxis[0].fontFamily;
             for (var i = 0; i < scale.yAxis[0].Labels.length; i++) {
                 var measuredText = ctx.measureText(scale.yAxis[0].Labels[i]).width;
                 longestText = (measuredText > longestText) ? measuredText : longestText;
@@ -139,10 +130,18 @@ Chart.prototype.Scale = function (ctx, yAxis, xAxis, height, width) {
             longestText += labelMargin;
         }
         scale.yAxis[0].PosX = graphMargin + longestText;
-        scale.xAxisLength = width - graphMargin - scale.yAxis[0].PosX;        
+        if (yAxis[0].showTitle) {
+            scale.yAxis[0].PosX = scale.yAxis[0].PosX + yAxis[0].fontSize + labelMargin;
+        }
+        scale.xAxisLength = width - graphMargin - scale.yAxis[0].PosX;
         scale.xAxisHop = scale.xAxisLength / (xAxis.labels.length);
         if (scale.yAxis[0].Min < scale.yAxis[0].Base && scale.yAxis[0].Max > scale.yAxis[0].Base) {
             scale.xAxisPosY = scale.xAxisPosY - scale.yAxis[0].Length * (((scale.yAxis[0].Min - scale.yAxis[0].Base) * -1) / (scale.yAxis[0].NumberOfSteps * scale.yAxis[0].StepValue));
+        }
+
+        for (var i = 0; i < xAxis.labels.length; i++) {
+            scale.stackedBarPositive.push(scale.xAxisPosY);
+            scale.stackedBarNegative.push(scale.xAxisPosY);
         }
     }
 
@@ -154,7 +153,6 @@ Chart.prototype.Scale = function (ctx, yAxis, xAxis, height, width) {
         ctx.moveTo(width - graphMargin, scale.xAxisPosY);
         ctx.lineTo(width - graphMargin - scale.xAxisLength, scale.xAxisPosY);
         ctx.stroke();
-
 
         if (scale.xAxisRotateLabels > 0) {
             ctx.textAlign = "right";
@@ -198,6 +196,12 @@ Chart.prototype.Scale = function (ctx, yAxis, xAxis, height, width) {
             }
             ctx.stroke();
         }
+        if (xAxis.showTitle) {
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.font = "bold " + xAxis.fontSize + "px " + xAxis.fontFamily;
+            ctx.fillText(xAxis.title, scale.yAxis[0].PosX + (xAxis.labels.length / 2) * scale.xAxisHop, height - graphMargin - xAxis.fontSize / 2);
+        }
 
         //Y axis
         ctx.lineWidth = yAxis[0].lineWidth;
@@ -209,6 +213,7 @@ Chart.prototype.Scale = function (ctx, yAxis, xAxis, height, width) {
 
         ctx.textAlign = "right";
         ctx.textBaseline = "middle";
+        ctx.font = yAxis[0].fontStyle + " " + yAxis[0].fontSize + "px " + yAxis[0].fontFamily;
         for (var j = 0; j <= scale.yAxis[0].NumberOfSteps; j++) {
             ctx.beginPath();
             ctx.moveTo(scale.yAxis[0].PosX, scale.yAxis[0].PosMin - (j * scale.yAxis[0].Hop));
@@ -222,15 +227,25 @@ Chart.prototype.Scale = function (ctx, yAxis, xAxis, height, width) {
             }
             ctx.stroke();
 
-            if (xAxis.showLabels) {
+            if (yAxis[0].showLabels) {
                 ctx.fillText(scale.yAxis[0].Labels[j], scale.yAxis[0].PosX - graphMargin, scale.yAxis[0].PosMin - (j * scale.yAxis[0].Hop));
             }
+        }
+        if (yAxis[0].showTitle) {
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.font = "bold " + yAxis[0].fontSize + "px " + yAxis[0].fontFamily;
+            ctx.save();
+            ctx.translate(graphMargin + yAxis[0].fontSize/2, scale.yAxis[0].PosMin - scale.yAxis[0].NumberOfSteps * scale.yAxis[0].Hop / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText(yAxis[0].title, 0, 0);
+            ctx.restore();
         }
     }
     
     function populateLabels() {
         for (var i = 0; i <= scale.yAxis[0].NumberOfSteps; i++) {
-            scale.yAxis[0].Labels.push((scale.yAxis[0].Min + (scale.yAxis[0].StepValue * i)));
+            scale.yAxis[0].Labels.push(Charts.template(yAxis[0].labelTemplate, { value: scale.yAxis[0].Min + (scale.yAxis[0].StepValue * i) }));
         }
     }
 

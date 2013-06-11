@@ -1,4 +1,23 @@
-window.Chart = function(context, options) {
+/*!
+ * repository https://github.com/WimAtIHomer/Chart.js
+ * This is Wim Pool's Fork of: 
+ *
+ * Chart.js
+ * http://chartjs.org/
+ *
+ * Copyright 2013 Nick Downie
+ * Released under the MIT license
+ * https://github.com/nnnick/Chart.js/blob/master/LICENSE.md
+ */
+
+window.Charts = {
+    animationOptions: {},
+    colors: [],
+    cache: {},
+    template: function (str, data) { return data; }
+};
+
+window.Chart = function (context, options) {
 
     var chart = this;
 
@@ -34,10 +53,19 @@ window.Chart = function(context, options) {
         if (typeof data.yAxis != 'undefined' && typeof data.xAxis != 'undefined') {
             scale = chart.Scale(context, data.yAxis, data.xAxis, height, width);
             var barGraphs = 0;
+            var stackedBarGraphs = -1;
             for (var i = 0; i < data.datasets.length; i++) {
                 if (data.datasets[i].chartType === "Bar") {
-                    data.datasets[i].barIndex = barGraphs;
-                    barGraphs++;
+                    if (data.datasets[i].stacked) {
+                        if (stackedBarGraphs == -1) {
+                            stackedBarGraphs = barGraphs;
+                            barGraphs++;
+                        }
+                        data.datasets[i].barIndex = stackedBarGraphs;
+                    } else {
+                        data.datasets[i].barIndex = barGraphs;
+                        barGraphs++;
+                    }
                 }
             }
             scale.barValueSpacing = 5;
@@ -45,8 +73,13 @@ window.Chart = function(context, options) {
             scale.barWidth = (scale.xAxisHop - (scale.barValueSpacing * 2) - (scale.barSpacing * (barGraphs - 1))) / barGraphs;
         }
         for (var i = 0; i < data.datasets.length; i++) {
-            if (typeof chart[data.datasets[i].chartType] != 'undefined') {
-                chart[data.datasets[i].chartType](context, data.datasets[i], scale, pct);
+            if (typeof chart[data.datasets[i].chartType] != "undefined") {
+                data.datasets[i] = mergeChartConfig(chart[data.datasets[i].chartType].defaults, data.datasets[i], i);
+                var animationPct = pct;
+                if (typeof Charts.animationOptions[data.datasets[i].animationEasing] != "undefined") {
+                    animationPct = Charts.animationOptions[data.datasets[i].animationEasing](pct);
+                }
+                chart[data.datasets[i].chartType](context, data.datasets[i], scale, animationPct);
             }
         }
     };
@@ -78,3 +111,35 @@ function animationLoop(animateFrame, steps) {
     requestAnimFrame(animLoop);
 };
 
+function mergeChartConfig(defaults, userDefined, i) {
+    var returnObj = {};
+    var attrname;
+    for (attrname in defaults) {
+        if (attrname.indexOf("Color") > -1 && Charts.colors.length > i) {
+            returnObj[attrname] = defaults[attrname].replace("color", Charts.colors[i]);
+        } else {
+            returnObj[attrname] = defaults[attrname];
+        }
+    }
+    for (attrname in userDefined) { returnObj[attrname] = userDefined[attrname]; }
+    return returnObj;
+}
+
+//Is a number function
+function isNumber(n) {
+    return !isNaN(parseFloat(n)) && isFinite(n);
+}
+//Apply cap a value at a high or low number
+function capValue(valueToCap, maxValue, minValue) {
+    if (isNumber(maxValue)) {
+        if (valueToCap > maxValue) {
+            return maxValue;
+        }
+    }
+    if (isNumber(minValue)) {
+        if (valueToCap < minValue) {
+            return minValue;
+        }
+    }
+    return valueToCap;
+}

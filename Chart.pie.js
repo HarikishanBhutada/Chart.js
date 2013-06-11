@@ -35,13 +35,14 @@
             ctx.textAlign = 'center';
             ctx.font = dataset.fontStyle + ' ' + dataset.fontSize + 'px ' + dataset.fontFamily;
             ctx.textBaseline = 'middle';
+            var valueText = Charts.template(dataset.labelTemplate, { value: dataset.data[i].value });
             var a = cumulativeAngle + segmentAngle / 2,
-                w = ctx.measureText(dataset.data[i].value).width,
+                w = ctx.measureText(valueText).width,
                 b = Math.PI / 2 < a && a < Math.PI * 3 / 2;
             ctx.translate(Math.cos(a) * dataset.radius, Math.sin(a) * dataset.radius);
             ctx.rotate(a - (b ? Math.PI : 0));
             ctx.fillStyle = dataset.fontColor;
-            ctx.fillText(dataset.data[i].value, (b ? 1 : -1) * (w / 2 + dataset.valuePadding), 0);
+            ctx.fillText(valueText, (b ? 1 : -1) * (w / 2 + dataset.valuePadding), 0);
             ctx.restore();
         }
 
@@ -54,6 +55,20 @@
     }
 };
 
+Chart.prototype.Pie.defaults = {
+    showValues: true,
+    fontFamily: "'Arial'",
+    fontSize: 8,
+    fontStyle: "normal",
+    fontColor: "#666",
+    labelTemplate: "<%=value%>",
+    valuePadding: 10,
+    animateScale: true,
+    animateRotate: true,
+    showStroke: false,
+    animationEasing: "easeOutBounce"
+};
+
 Chart.prototype.Doughnut = function (ctx, dataset, scale, pct) {
     if (typeof dataset.percentageInnerCutout == "undefined") {
         dataset.percentageInnerCutout = 50;
@@ -61,32 +76,18 @@ Chart.prototype.Doughnut = function (ctx, dataset, scale, pct) {
     this.Pie(ctx, dataset, scale, pct);
 };
 
-Chart.prototype.PolarArea = function (ctx, dataset, scale, pct) {
-    var startAngle = -Math.PI / 2,
-        angleStep = (Math.PI * 2) / data.length,
-        scaleAnimation = 1,
-        rotateAnimation = 1;
-    if (dataset.animateScale) {
-        scaleAnimation = pct;
-    }
-    if (dataset.animateRotate) {
-        rotateAnimation = pct;
-    }
-
-    for (var i = 0; i < dataset.data.length; i++) {
-
-        ctx.beginPath();
-        ctx.arc(dataset.PosX, dataset.PosY, scale.yPos(dataset.data[i].value, scaleAnimation, dataset.yAxis), startAngle, startAngle + rotateAnimation * angleStep, false);
-        ctx.lineTo(dataset.PosX, dataset.PosY);
-        ctx.closePath();
-        ctx.fillStyle = dataset.data[i].color;
-        ctx.fill();
-
-        if (dataset.showStroke) {
-            ctx.strokeStyle = dataset.strokeColor;
-            ctx.lineWidth = dataset.strokeWidth;
-            ctx.stroke();
-        }
-        startAngle += rotateAnimation * angleStep;
-    }
+Chart.prototype.Doughnut.defaults = {
+    showValues: true,
+    fontFamily: "'Arial'",
+    fontSize: 8,
+    fontStyle: "normal",
+    fontColor: "#666",
+    labelTemplate: "<%=value%>",
+    valuePadding: 10,
+    animateScale: true,
+    animateRotate: true,
+    showStroke: false,
+    percentageInnerCutout: 30,
+    animationEasing: "easeOutBounce"
 };
+
