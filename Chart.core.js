@@ -49,9 +49,20 @@ window.Chart = function (context, options) {
     };
 
     var drawData = function (data, pct) {
+        var dHeight = height;
+        var dWidth = width;
+        var rotated = false;
+        if (options.rotate) {
+            context.save();
+            context.translate(width, 0);
+            context.rotate(Math.PI * 1 / 2);
+            dHeight = width;
+            dWidth = height;
+            rotated = true;
+        }
         var scale = {};
         if (typeof data.yAxis != 'undefined' && typeof data.xAxis != 'undefined') {
-            scale = chart.Scale(context, data.yAxis, data.xAxis, height, width);
+            scale = chart.Scale(context, data.yAxis, data.xAxis, dHeight, dWidth, rotated);
             var barGraphs = 0;
             var stackedBarGraphs = -1;
             for (var i = 0; i < data.datasets.length; i++) {
@@ -81,6 +92,9 @@ window.Chart = function (context, options) {
                 }
                 chart[data.datasets[i].chartType](context, data.datasets[i], scale, animationPct);
             }
+        }
+        if (options.rotate) {
+            context.restore();
         }
     };
 };
