@@ -33,8 +33,38 @@ window.Chart = function (context, options) {
         context.canvas.width = width * window.devicePixelRatio;
         context.scale(window.devicePixelRatio, window.devicePixelRatio);
     }
+    var position = getPosition(context.canvas);
+
+    if (window.Touch) {
+        context.canvas.ontouchstart = function(e) {
+            e.offsetX = e.targetTouches[0].clientX - position.x;
+            e.offsetY = e.targetTouches[0].clientY - position.y;
+            activeDataPointHandler(e);
+        };
+        context.canvas.ontouchmove = function(e) {
+            e.offsetX = e.targetTouches[0].clientX - position.x;
+            e.offsetY = e.targetTouches[0].clientY - position.y;
+            activeDataPointHandler(e);
+        };
+    } else {
+        context.canvas.onmousemove = function(e) {
+            activeDataPointHandler(e);
+        };
+    }
+
+    function activeDataPointHandler(event) {
+        var point = { xAxis: -1, yAxis: [] };
+        point.xAxis = chart.scaleData.xVal(event.offsetX);
+        point.yAxis[0] = chart.scaleData.yVal(event.offsetY, 0);
+        point.yAxis[1] = chart.scaleData.yVal(event.offsetY, 1);
+        chart.mouseover({ event: event, point: point });
+    }
+
 
     this.data = {};
+    this.scaleData = {};
+    this.mouseover = function(e) {
+    };
 
     this.draw = function(steps) {
         animationLoop(animateFrame, steps);
@@ -45,10 +75,10 @@ window.Chart = function (context, options) {
     };
     var animateFrame = function(pct) {
         chart.clear();
-        drawData(chart.data, pct);
+        chart.scaleData = drawData(chart.data, chart.scaleData, pct);
     };
 
-    var drawData = function (data, pct) {
+    var drawData = function (data, scale, pct) {
         var dHeight = height;
         var dWidth = width;
         var rotated = false;
@@ -60,29 +90,19 @@ window.Chart = function (context, options) {
             dWidth = height;
             rotated = true;
         }
-        var scale = {};
-        if (typeof data.yAxis != 'undefined' && typeof data.xAxis != 'undefined') {
-            scale = chart.Scale(context, data.yAxis, data.xAxis, dHeight, dWidth, rotated);
-            var barGraphs = 0;
-            var stackedBarGraphs = -1;
-            for (var i = 0; i < data.datasets.length; i++) {
-                if (data.datasets[i].chartType === "Bar") {
-                    if (data.datasets[i].stacked) {
-                        if (stackedBarGraphs == -1) {
-                            stackedBarGraphs = barGraphs;
-                            barGraphs++;
-                        }
-                        data.datasets[i].barIndex = stackedBarGraphs;
-                    } else {
-                        data.datasets[i].barIndex = barGraphs;
-                        barGraphs++;
-                    }
-                }
-            }
-            scale.barValueSpacing = 5;
-            scale.barSpacing = 10;
-            scale.barWidth = (scale.xAxisHop - (scale.barValueSpacing * 2) - (scale.barSpacing * (barGraphs - 1))) / barGraphs;
-        }
+        data.xAxis = mergeChartConfig(chart.xAxis.defaults, data.xAxis, -1);
+        chart.xAxis(data);
+        data.yAxis = mergeChartConfig(chart.yAxis.gridDefaults, data.yAxis, -1);
+        chart.yAxis(data, 0);
+        data.yAxis.lines[0] = mergeChartConfig(chart.yAxis.lineDefaults, data.yAxis.lines[0], -1);
+        chart.yAxis(data, 1);
+        data.yAxis.lines[1] = mergeChartConfig(chart.yAxis.lineDefaults, data.yAxis.lines[1], -1);
+        data.yAxis = mergeChartConfig(chart.yAxis.gridDefaults, data.yAxis, -1);
+        if (!data.yAxis.lines[1].show) data.yAxis.lines.pop();
+        scale = chart.Scale(context, data.yAxis, data.xAxis, dHeight, dWidth, rotated);
+        scale.barValueSpacing = data.xAxis.valueSpacing;
+        scale.barSpacing = data.xAxis.barSpacing;
+        scale.barWidth = (scale.xAxisHop - (scale.barValueSpacing * 2) - (scale.barSpacing * (data.xAxis.barGraphs - 1))) / data.xAxis.barGraphs;
         for (var i = 0; i < data.datasets.length; i++) {
             if (typeof chart[data.datasets[i].chartType] != "undefined") {
                 data.datasets[i] = mergeChartConfig(chart[data.datasets[i].chartType].defaults, data.datasets[i], i);
@@ -96,6 +116,7 @@ window.Chart = function (context, options) {
         if (options.rotate) {
             context.restore();
         }
+        return scale;
     };
 };
 
@@ -129,14 +150,18 @@ function mergeChartConfig(defaults, userDefined, i) {
     var returnObj = {};
     var attrname;
     for (attrname in defaults) {
-        if (attrname.indexOf("Color") > -1 && Charts.colors.length > i) {
-            returnObj[attrname] = defaults[attrname].replace("color", Charts.colors[i]);
+        if (attrname.indexOf("Color") > -1) {
+            returnObj[attrname] = defaults[attrname].replace("color", getColor(i));
         } else {
             returnObj[attrname] = defaults[attrname];
         }
     }
     for (attrname in userDefined) { returnObj[attrname] = userDefined[attrname]; }
     return returnObj;
+}
+
+function getColor(i) {
+    return (Charts.colors.length > i && i < 0) ? "0,0,0" : Charts.colors[i];
 }
 
 //Is a number function
@@ -156,4 +181,23 @@ function capValue(valueToCap, maxValue, minValue) {
         }
     }
     return valueToCap;
+}
+
+function getPosition(e) {
+    var xPosition = 0;
+    var yPosition = 0;
+
+    while (e) {
+        xPosition += (e.offsetLeft + e.clientLeft);
+        yPosition += (e.offsetTop + e.clientTop);
+        e = e.offsetParent;
+    }
+    if (window.pageXOffset > 0 || window.pageYOffset > 0) {
+        xPosition -= window.pageXOffset;
+        yPosition -= window.pageYOffset;
+    } else if (document.body.scrollLeft > 0 || document.body.scrollTop > 0) {
+        xPosition -= document.body.scrollLeft;
+        yPosition -= document.body.scrollTop;
+    }
+    return { x: xPosition, y: yPosition };
 }
