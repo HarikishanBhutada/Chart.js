@@ -1,4 +1,4 @@
-﻿Chart.prototype.xAxis = function(data) {
+﻿XYChart.prototype.xAxis = function (data) {
     var stackedBarGraphs = -1;
     data.xAxis.barGraphs = 0;
     for (var i = 0; i < data.datasets.length; i++) {
@@ -28,7 +28,7 @@
     }
 };
 
-Chart.prototype.xAxis.defaults = {
+XYChart.prototype.xAxis.defaults = {
     showTitle: false,
     showLabels: true,
     fontFamily: "'Arial'",
@@ -45,5 +45,5 @@ Chart.prototype.xAxis.defaults = {
     lineWidth: 1,
     lineColor: "rgba(0,0,0,.1)",
     valueSpacing: 5,
-    barSpacing: 10
+    barSpacing: 1
 };

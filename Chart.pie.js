@@ -1,4 +1,4 @@
-﻿Chart.prototype.Pie = function(ctx, dataset, scale, pct) {
+﻿XYChart.prototype.Pie = function (ctx, dataset, scale, pct) {
     var segmentTotal = 0;
     var scaleAnimation = 1;
     var rotateAnimation = 1;
@@ -55,7 +55,7 @@
     }
 };
 
-Chart.prototype.Pie.defaults = {
+XYChart.prototype.Pie.defaults = {
     showValues: true,
     fontFamily: "'Arial'",
     fontSize: 8,
@@ -69,14 +69,14 @@ Chart.prototype.Pie.defaults = {
     animationEasing: "easeOutBounce"
 };
 
-Chart.prototype.Doughnut = function (ctx, dataset, scale, pct) {
+XYChart.prototype.Doughnut = function (ctx, dataset, scale, pct) {
     if (typeof dataset.percentageInnerCutout == "undefined") {
         dataset.percentageInnerCutout = 50;
     }
     this.Pie(ctx, dataset, scale, pct);
 };
 
-Chart.prototype.Doughnut.defaults = {
+XYChart.prototype.Doughnut.defaults = {
     showValues: true,
     fontFamily: "'Arial'",
     fontSize: 8,

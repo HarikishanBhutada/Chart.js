@@ -1,16 +1,16 @@
-Chart.prototype.Bar = function (ctx, dataset, scale, pct) {
+XYChart.prototype.Bar = function (ctx, dataset, scale, pct) {
     ctx.lineWidth = dataset.strokeWidth;
     ctx.fillStyle = dataset.fillColor;
     ctx.strokeStyle = dataset.strokeColor;
     for (var j = 0; j < dataset.data.length; j++) {
-        var barOffset = scale.xPos(j, dataset.yAxis, false) + scale.barValueSpacing + scale.barWidth * dataset.barIndex + scale.barSpacing * dataset.barIndex;
+        var barOffset = scale.xPos(j, dataset.yAxis, false) + scale.barValueSpacing + scale.barWidth * dataset.barIndex + scale.barSpacing * dataset.barIndex + dataset.strokeWidth / 2;
 
         ctx.beginPath();
         ctx.moveTo(barOffset, dataset.stacked ? scale.yStackedBase(dataset.data[j], j, dataset.yAxis) : scale.xAxisPosY);
-        var yPosTo = dataset.stacked ? scale.yStackedPos(dataset.data[j], pct, dataset.yAxis, j) : scale.yPos(dataset.data[j], pct, dataset.yAxis);
+        var yPosTo = (dataset.stacked ? scale.yStackedPos(dataset.data[j], pct, dataset.yAxis, j) : scale.yPos(dataset.data[j], pct, dataset.yAxis)) - dataset.strokeWidth / 2;
         ctx.lineTo(barOffset, yPosTo);
-        ctx.lineTo(barOffset + scale.barWidth, yPosTo);
-        ctx.lineTo(barOffset + scale.barWidth, dataset.stacked ? scale.yStackedBase(dataset.data[j], j, dataset.yAxis) : scale.xAxisPosY);
+        ctx.lineTo(barOffset + scale.barWidth - dataset.strokeWidth, yPosTo);
+        ctx.lineTo(barOffset + scale.barWidth - dataset.strokeWidth, dataset.stacked ? scale.yStackedBase(dataset.data[j], j, dataset.yAxis) : scale.xAxisPosY);
         if (dataset.stacked) {
             scale.yStackedRebase(dataset.data[j], j, dataset.yAxis, yPosTo);
         }
@@ -22,7 +22,7 @@ Chart.prototype.Bar = function (ctx, dataset, scale, pct) {
     }
 };
 
-Chart.prototype.Bar.defaults = {
+XYChart.prototype.Bar.defaults = {
     showStroke: true,
     strokeWidth: 2,
     strokeColor: "rgba(color,1)",

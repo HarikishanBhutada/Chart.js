@@ -1,19 +1,20 @@
-﻿Chart.prototype.yAxis = function (data, index) {
-    var minValue = 0;
-    var maxValue = 0;
-    if (typeof data.datasets.yAxis == "undefined") {
-        data.datasets.yAxis = 0;
-    }
+﻿XYChart.prototype.yAxis = function (data, index) {
+    var minValue = Infinity;
+    var maxValue = -Infinity;
+
     this.yAxis.lineDefaults.show = false;
     for (var i = 0; i < data.datasets.length; i++) {
-        if (data.datasets.yAxis == index) {
+        if (typeof data.datasets[i].yAxis == "undefined") {
+            data.datasets[i].yAxis = 0;
+        }
+        if (data.datasets[i].yAxis == index) {
             this.yAxis.lineDefaults.show = true;
-            minValue = minOfArray(data.datasets[i].data);
-            maxValue = maxOfArray(data.datasets[i].data);
+            minValue = Math.min(minValue, minOfArray(data.datasets[i].data));
+            maxValue = Math.max(maxValue, maxOfArray(data.datasets[i].data));
         }
     }
-    this.yAxis.lineDefaults.minValue = minValue;
-    this.yAxis.lineDefaults.maxValue = maxValue;
+    this.yAxis.lineDefaults.minValue = (minValue == Infinity) ? 0 : minValue;
+    this.yAxis.lineDefaults.maxValue = (maxValue == -Infinity) ? 0 : maxValue;
     
     function minOfArray(arr) {
         var min = Infinity;
@@ -41,7 +42,7 @@
 
 };
 
-Chart.prototype.yAxis.lineDefaults = {
+XYChart.prototype.yAxis.lineDefaults = {
     showTitle: false,
     fontFamily: "'Arial'",
     fontSize: 12,
@@ -54,10 +55,9 @@ Chart.prototype.yAxis.lineDefaults = {
     lineColor: "rgba(0,0,0,.1)"
 };
 
-Chart.prototype.yAxis.gridDefaults = {
+XYChart.prototype.yAxis.gridDefaults = {
     minSteps: 2,
     showGridLines: true,
     gridLineWidth: 0.5,
-    gridLineColor: "rgba(0,0,0,.05)",
-    lines: []
+    gridLineColor: "rgba(0,0,0,.05)"
 };

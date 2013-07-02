@@ -17,7 +17,7 @@ window.Charts = {
     template: function (str, data) { return data; }
 };
 
-window.Chart = function (context, options) {
+window.XYChart = function (context, options) {
 
     var chart = this;
 
@@ -36,53 +36,60 @@ window.Chart = function (context, options) {
     var position = getPosition(context.canvas);
 
     if (window.Touch) {
-        context.canvas.ontouchstart = function(e) {
+        context.canvas.ontouchstart = function (e) {
             e.offsetX = e.targetTouches[0].clientX - position.x;
             e.offsetY = e.targetTouches[0].clientY - position.y;
             activeDataPointHandler(e);
         };
-        context.canvas.ontouchmove = function(e) {
+        context.canvas.ontouchmove = function (e) {
             e.offsetX = e.targetTouches[0].clientX - position.x;
             e.offsetY = e.targetTouches[0].clientY - position.y;
             activeDataPointHandler(e);
         };
     } else {
-        context.canvas.onmousemove = function(e) {
+        context.canvas.onmousemove = function (e) {
             activeDataPointHandler(e);
         };
     }
 
     function activeDataPointHandler(event) {
-        var point = { xAxis: -1, yAxis: [] };
-        point.xAxis = chart.scaleData.xVal(event.offsetX);
-        point.yAxis[0] = chart.scaleData.yVal(event.offsetY, 0);
-        point.yAxis[1] = chart.scaleData.yVal(event.offsetY, 1);
-        chart.mouseover({ event: event, point: point });
+        if (typeof event != "undefined" && event != null && typeof chart.scaleData.xVal != "undefined") {
+            var point = { xAxis: -1, yAxis: [] };
+            point.xAxis = chart.scaleData.xVal(event.offsetX);
+            point.bar = chart.scaleData.bar(event.offsetX);
+            point.yAxis[0] = chart.scaleData.yVal(event.offsetY, 0);
+            point.yAxis[1] = chart.scaleData.yVal(event.offsetY, 1);
+            chart.mouseover({ event: event, point: point });
+        }
     }
-
 
     this.data = {};
     this.scaleData = {};
-    this.mouseover = function(e) {
+    this.mouseover = function (e) {
     };
 
-    this.draw = function(steps) {
+    this.draw = function (steps) {
+        chart.scaleData = setScale(chart.data);
         animationLoop(animateFrame, steps);
-        if (typeof options.onAnimationComplete == "function") options.onAnimationComplete();
+        if (typeof options != "undefined") {
+            if (typeof options.onAnimationComplete == "function") {
+                options.onAnimationComplete();
+            }
+        }
     };
-    this.clear = function() {
+    this.clear = function () {
         context.clearRect(0, 0, width, height);
     };
-    var animateFrame = function(pct) {
+    var animateFrame = function (pct) {
         chart.clear();
-        chart.scaleData = drawData(chart.data, chart.scaleData, pct);
+        drawData(chart.data, chart.scaleData, pct);
     };
 
-    var drawData = function (data, scale, pct) {
+    var setScale = function (data) {
         var dHeight = height;
         var dWidth = width;
         var rotated = false;
-        if (options.rotate) {
+        if (typeof options != "undefined" && options.rotate) {
             context.save();
             context.translate(width, 0);
             context.rotate(Math.PI * 1 / 2);
@@ -90,19 +97,37 @@ window.Chart = function (context, options) {
             dWidth = height;
             rotated = true;
         }
+
         data.xAxis = mergeChartConfig(chart.xAxis.defaults, data.xAxis, -1);
         chart.xAxis(data);
         data.yAxis = mergeChartConfig(chart.yAxis.gridDefaults, data.yAxis, -1);
+        if (typeof data.yAxis.lines == "undefined") data.yAxis.lines = [];
         chart.yAxis(data, 0);
         data.yAxis.lines[0] = mergeChartConfig(chart.yAxis.lineDefaults, data.yAxis.lines[0], -1);
         chart.yAxis(data, 1);
         data.yAxis.lines[1] = mergeChartConfig(chart.yAxis.lineDefaults, data.yAxis.lines[1], -1);
         data.yAxis = mergeChartConfig(chart.yAxis.gridDefaults, data.yAxis, -1);
         if (!data.yAxis.lines[1].show) data.yAxis.lines.pop();
-        scale = chart.Scale(context, data.yAxis, data.xAxis, dHeight, dWidth, rotated);
+        var scale = chart.Scale(context, data.yAxis, data.xAxis, dHeight, dWidth, rotated);
         scale.barValueSpacing = data.xAxis.valueSpacing;
         scale.barSpacing = data.xAxis.barSpacing;
         scale.barWidth = (scale.xAxisHop - (scale.barValueSpacing * 2) - (scale.barSpacing * (data.xAxis.barGraphs - 1))) / data.xAxis.barGraphs;
+        return scale;
+    };
+
+    var drawData = function (data, scale, pct) {
+        var dHeight = height;
+        var dWidth = width;
+        var rotated = false;
+        if (typeof options != "undefined" && options.rotate) {
+            context.save();
+            context.translate(width, 0);
+            context.rotate(Math.PI * 1 / 2);
+            dHeight = width;
+            dWidth = height;
+            rotated = true;
+        }
+        chart.DrawScale(context, data.yAxis, data.xAxis, dHeight, dWidth, scale);
         for (var i = 0; i < data.datasets.length; i++) {
             if (typeof chart[data.datasets[i].chartType] != "undefined") {
                 data.datasets[i] = mergeChartConfig(chart[data.datasets[i].chartType].defaults, data.datasets[i], i);
@@ -113,7 +138,7 @@ window.Chart = function (context, options) {
                 chart[data.datasets[i].chartType](context, data.datasets[i], scale, animationPct);
             }
         }
-        if (options.rotate) {
+        if (rotated) {
             context.restore();
         }
         return scale;

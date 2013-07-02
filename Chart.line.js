@@ -1,4 +1,4 @@
-﻿Chart.prototype.Line = function (ctx, dataset, scale, pct) {
+﻿XYChart.prototype.Line = function (ctx, dataset, scale, pct) {
     ctx.strokeStyle = dataset.strokeColor;
     ctx.lineWidth = dataset.strokeWidth;
     ctx.beginPath();
@@ -33,7 +33,7 @@
     }
 };
 
-Chart.prototype.Line.defaults = {
+XYChart.prototype.Line.defaults = {
     strokeWidth: 2,
     strokeColor: "rgba(color,1)",
     fillColor: "rgba(color,0.5)",
@@ -46,7 +46,7 @@ Chart.prototype.Line.defaults = {
 };
 
 
-Chart.prototype.Scatter = function(ctx, dataset, scale, pct) {
+XYChart.prototype.Scatter = function (ctx, dataset, scale, pct) {
     ctx.fillStyle = dataset.pointColor;
     ctx.strokeStyle = dataset.pointStrokeColor;
     ctx.lineWidth = dataset.pointDotStrokeWidth;
@@ -59,7 +59,7 @@ Chart.prototype.Scatter = function(ctx, dataset, scale, pct) {
     }
 };
 
-Chart.prototype.Scatter.defaults = {
+XYChart.prototype.Scatter.defaults = {
     pointDotStrokeWidth: 2,
     pointColor: "rgba(color,1)",
     pointStrokeColor: "rgba(color,0.5)",
