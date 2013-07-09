@@ -9,37 +9,17 @@
         }
         if (data.datasets[i].yAxis == index) {
             this.yAxis.lineDefaults.show = true;
-            minValue = Math.min(minValue, minOfArray(data.datasets[i].data));
-            maxValue = Math.max(maxValue, maxOfArray(data.datasets[i].data));
+            minValue = Math.min(minValue, data.datasets[i].data.reduce(function(m, o) {
+                return (o != null && o < m) ? o : m;
+            }, Infinity));
+            maxValue = Math.max(maxValue, data.datasets[i].data.reduce(function (m, o) {
+                return (o != null && o > m) ? o : m;
+            }, -Infinity));
         }
     }
     this.yAxis.lineDefaults.minValue = (minValue == Infinity) ? 0 : minValue;
     this.yAxis.lineDefaults.maxValue = (maxValue == -Infinity) ? 0 : maxValue;
-    
-    function minOfArray(arr) {
-        var min = Infinity;
-        var QUANTUM = 32768;
-
-        for (var i = 0, len = arr.length; i < len; i += QUANTUM) {
-            var submin = Math.min.apply(null, arr.slice(i, Math.min(i + QUANTUM, len)));
-            min = Math.min(submin, min);
-        }
-
-        return min;
-    }
-
-    function maxOfArray(arr) {
-        var max = -Infinity;
-        var QUANTUM = 32768;
-
-        for (var i = 0, len = arr.length; i < len; i += QUANTUM) {
-            var submax = Math.max.apply(null, arr.slice(i, Math.max(i + QUANTUM, len)));
-            max = Math.max(submax, max);
-        }
-
-        return max;
-    }
-
+  
 };
 
 XYChart.prototype.yAxis.lineDefaults = {
@@ -51,6 +31,7 @@ XYChart.prototype.yAxis.lineDefaults = {
     labelTemplate: "<%=value%>",
     baseValue: 0,
     showLabels: true,
+    showLine: true,
     lineWidth: 1,
     lineColor: "rgba(0,0,0,.1)"
 };

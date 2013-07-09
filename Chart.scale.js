@@ -10,12 +10,12 @@
         yAxisLength: 0,
         // yAxis space between 2 labels
         yAxisHop: 0,
+        yAxisPosY: 0,
         yAxis: [{
             LabelWidth: 0,
             LabelPosition: 1,
             // yAxis top left position
             PosX: 0,
-            PosY: 0,
             // yAxis minimum value, copied from yAxis
             Min: 0,
             // yAxis minimum value, copied from yAxis
@@ -68,6 +68,12 @@
             var adjustedValue = val - scale.yAxis[yAxisIndex].Base;
             var scalingFactor = capValue(adjustedValue / outerValue, 1, -1);
             return (scale.yAxisHop * scale.yAxis[yAxisIndex].NumberOfSteps) * scalingFactor;
+        },
+        stackedBaseReset: function () {
+            for (var i = 0; i < xAxis.labels.length; i++) {
+                scale.stackedBarPositive[i] = scale.xAxisPosY;
+                scale.stackedBarNegative[i] = scale.xAxisPosY;
+            }
         },
         yStackedBase: function (val, xAxisLabelIndex, yAxisIndex) {
             return (val >= scale.yAxis[yAxisIndex].Base) ? scale.stackedBarPositive[xAxisLabelIndex] : scale.stackedBarNegative[xAxisLabelIndex];
@@ -185,6 +191,7 @@
         }
     }
     var totalYAxisText = 1;
+    var maxPosY = 0;
     //if we are showing the labels
     for (var y in yAxis.lines) {
         var longestText = 1;
@@ -200,11 +207,11 @@
         totalYAxisText += longestText;
 
         if (scale.rotated) {
-            scale.yAxis[y].PosY = scale.graphMargin + longestText / 2;
+            maxPosY = Math.max(maxPosY, scale.graphMargin + longestText / 2);
             scale.yAxis[y].LabelWidth = scale.graphMargin + yAxis.lines[y].fontSize + scale.labelMargin;
         } else {
             scale.yAxis[y].LabelWidth = scale.graphMargin + longestText;
-            scale.yAxis[y].PosY = scale.graphMargin + yAxis.lines[y].fontSize / 2 + scale.labelMargin;
+            maxPosY = Math.max(maxPosY, scale.graphMargin + yAxis.lines[y].fontSize / 2 + scale.labelMargin);
         }
         if (yAxis.lines[y].showTitle) {
             scale.yAxis[y].LabelWidth = scale.yAxis[y].LabelWidth + yAxis.lines[y].fontSize + scale.labelMargin;
@@ -215,6 +222,7 @@
             scale.yAxis[y].PosX = width - scale.yAxis[y].LabelWidth;
         }
     }
+    scale.yAxisPosY = maxPosY;
     var maxSize;
     scale.xAxisLabelHeight = widestXLabel + scale.labelMargin;
     maxSize = height - 2 * scale.graphMargin - scale.xAxisLabelHeight - longestText / 2;
@@ -223,7 +231,7 @@
     }
     scale.xAxisLength = width;
     scale.yAxisLength = maxSize;
-    scale.yAxisPosMin = scale.yAxisLength + scale.yAxis[0].PosY;
+    scale.yAxisPosMin = scale.yAxisLength + scale.yAxisPosY;
     scale.xAxisPosY = scale.yAxisPosMin;
     scale.yAxisHop = scale.yAxisLength / scale.yAxis[0].NumberOfSteps;
     for (var y in scale.yAxis) {
@@ -247,10 +255,11 @@ XYChart.prototype.DrawScale = function (ctx, yAxis, xAxis, height, width, scale)
     ctx.lineWidth = xAxis.lineWidth;
     ctx.strokeStyle = xAxis.lineColor;
     ctx.beginPath();
-    ctx.moveTo(scale.yAxis[1].PosX, scale.xAxisPosY);
-    ctx.lineTo(scale.yAxis[0].PosX, scale.xAxisPosY);
-    ctx.stroke();
-
+    if (xAxis.showLine) {
+        ctx.moveTo(scale.yAxis[1].PosX, scale.xAxisPosY);
+        ctx.lineTo(scale.yAxis[0].PosX, scale.xAxisPosY);
+        ctx.stroke();
+    }
     if (scale.xAxisRotateLabels > 0) {
         ctx.textAlign = "right";
         ctx.textBaseline = "middle";
@@ -278,7 +287,7 @@ XYChart.prototype.DrawScale = function (ctx, yAxis, xAxis, height, width, scale)
             ctx.moveTo(scale.yAxis[0].PosX + (i + 1) * scale.xAxisHop, scale.yAxisPosMin);
             ctx.lineWidth = xAxis.gridLineWidth;
             ctx.strokeStyle = xAxis.gridLineColor;
-            ctx.lineTo(scale.yAxis[0].PosX + (i + 1) * scale.xAxisHop, scale.yAxis[0].PosY);
+            ctx.lineTo(scale.yAxis[0].PosX + (i + 1) * scale.xAxisHop, scale.yAxisPosY);
             ctx.stroke();
         }
         ctx.beginPath();
@@ -286,7 +295,7 @@ XYChart.prototype.DrawScale = function (ctx, yAxis, xAxis, height, width, scale)
         if (xAxis.showMiddleGridLines) {
             ctx.lineWidth = xAxis.gridMiddleLineWidth;
             ctx.strokeStyle = xAxis.gridMiddleLineColor;
-            ctx.lineTo(scale.yAxis[0].PosX + (i + 1 / 2) * scale.xAxisHop, scale.yAxis[0].PosY);
+            ctx.lineTo(scale.yAxis[0].PosX + (i + 1 / 2) * scale.xAxisHop, scale.yAxisPosY);
         }
         ctx.stroke();
     }
@@ -302,10 +311,11 @@ XYChart.prototype.DrawScale = function (ctx, yAxis, xAxis, height, width, scale)
         ctx.lineWidth = yAxis.lines[y].lineWidth;
         ctx.strokeStyle = yAxis.lines[y].lineColor;
         ctx.beginPath();
-        ctx.moveTo(scale.yAxis[y].PosX, scale.yAxisPosMin);
-        ctx.lineTo(scale.yAxis[y].PosX, scale.yAxis[y].PosY);
-        ctx.stroke();
-
+        if (yAxis.lines[y].showLine) {
+            ctx.moveTo(scale.yAxis[y].PosX, scale.yAxisPosMin);
+            ctx.lineTo(scale.yAxis[y].PosX, scale.yAxisPosY);
+            ctx.stroke();
+        }
         for (var j = 0; j <= scale.yAxis[y].NumberOfSteps; j++) {
             if (yAxis.lines[y].showLabels) {
                 ctx.textBaseline = "middle";

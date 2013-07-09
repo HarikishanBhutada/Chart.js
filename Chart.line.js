@@ -2,19 +2,25 @@
     ctx.strokeStyle = dataset.strokeColor;
     ctx.lineWidth = dataset.strokeWidth;
     ctx.beginPath();
-    var yPos = scale.yPos(dataset.data[0], pct, dataset.yAxis);
-    var xPos = scale.xPos(0, dataset.yAxis, true);
-    ctx.moveTo(xPos, yPos);
-        
-    for (var j = 1; j < dataset.data.length; j++) {
-        var yPosLast = yPos;
-        yPos = scale.yPos(dataset.data[j], pct, dataset.yAxis);
-        var xPosMiddle = scale.xPos(j, dataset.yAxis, false);
-        xPos = scale.xPos(j, dataset.yAxis, true);
-        if (dataset.bezierCurve) {
-            ctx.bezierCurveTo(xPosMiddle, yPosLast, xPosMiddle, yPos, xPos, yPos);
-        } else {
-            ctx.lineTo(xPos, yPos);
+    var yPos = Infinity;
+    var xPos = Infinity;
+    for (var j = 0; j < dataset.data.length; j++) {
+        if (dataset.data[j] != null) {
+            if (yPos == Infinity) {
+                yPos = scale.yPos(dataset.data[j], pct, dataset.yAxis);
+                xPos = scale.xPos(j, dataset.yAxis, true);
+                ctx.moveTo(xPos, yPos);
+            } else {
+                var yPosLast = yPos;
+                yPos = scale.yPos(dataset.data[j], pct, dataset.yAxis);
+                var xPosMiddle = scale.xPos(j, dataset.yAxis, false);
+                xPos = scale.xPos(j, dataset.yAxis, true);
+                if (dataset.bezierCurve) {
+                    ctx.bezierCurveTo(xPosMiddle, yPosLast, xPosMiddle, yPos, xPos, yPos);
+                } else {
+                    ctx.lineTo(xPos, yPos);
+                }
+            }
         }
     }
     ctx.stroke();

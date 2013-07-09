@@ -89,10 +89,7 @@ window.XYChart = function (context, options) {
         var dHeight = height;
         var dWidth = width;
         var rotated = false;
-        if (typeof options != "undefined" && options.rotate) {
-            context.save();
-            context.translate(width, 0);
-            context.rotate(Math.PI * 1 / 2);
+        if (data.rotate) {
             dHeight = width;
             dWidth = height;
             rotated = true;
@@ -119,7 +116,7 @@ window.XYChart = function (context, options) {
         var dHeight = height;
         var dWidth = width;
         var rotated = false;
-        if (typeof options != "undefined" && options.rotate) {
+        if (data.rotate) {
             context.save();
             context.translate(width, 0);
             context.rotate(Math.PI * 1 / 2);
@@ -128,6 +125,7 @@ window.XYChart = function (context, options) {
             rotated = true;
         }
         chart.DrawScale(context, data.yAxis, data.xAxis, dHeight, dWidth, scale);
+        scale.stackedBaseReset();
         for (var i = 0; i < data.datasets.length; i++) {
             if (typeof chart[data.datasets[i].chartType] != "undefined") {
                 data.datasets[i] = mergeChartConfig(chart[data.datasets[i].chartType].defaults, data.datasets[i], i);

@@ -36,6 +36,7 @@ XYChart.prototype.xAxis.defaults = {
     fontStyle: "normal",
     fontColor: "#666",
     scaleXAxisPoint: 0,
+    showLine: true,
     showGridLines: true,
     gridLineWidth: 0.5,
     gridLineColor: "rgba(0,0,0,.05)",
