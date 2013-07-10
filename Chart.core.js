@@ -207,20 +207,27 @@ function capValue(valueToCap, maxValue, minValue) {
 }
 
 function getPosition(e) {
-    var xPosition = 0;
-    var yPosition = 0;
+    var offset = getOffset(e);
+    var xPosition = offset.x;
+    var yPosition = offset.y;
 
-    while (e) {
-        xPosition += (e.offsetLeft + e.clientLeft);
-        yPosition += (e.offsetTop + e.clientTop);
-        e = e.offsetParent;
-    }
     if (window.pageXOffset > 0 || window.pageYOffset > 0) {
         xPosition -= window.pageXOffset;
         yPosition -= window.pageYOffset;
     } else if (document.body.scrollLeft > 0 || document.body.scrollTop > 0) {
         xPosition -= document.body.scrollLeft;
         yPosition -= document.body.scrollTop;
+    }
+    return { x: xPosition, y: yPosition };
+}
+
+function getOffset(e) {
+    var xPosition = 0;
+    var yPosition = 0;
+    while (e) {
+        xPosition += (e.offsetLeft + e.clientLeft);
+        yPosition += (e.offsetTop + e.clientTop);
+        e = e.offsetParent;
     }
     return { x: xPosition, y: yPosition };
 }

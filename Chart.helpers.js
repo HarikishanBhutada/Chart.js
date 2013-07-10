@@ -8,7 +8,8 @@
     "224, 243, 248",
     "244, 109, 67",
     "116, 173, 209",
-    "253, 174, 97"
+    "253, 174, 97",
+    "10,10,10"
 ];
 
 //Easing functions adapted from Robert Penner's easing equations

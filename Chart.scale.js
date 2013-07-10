@@ -155,7 +155,9 @@
                 }
             }
             scale.yAxis[y].NumberOfSteps = scale.yAxis[0].NumberOfSteps;
-            scale.yAxis[y].StepValue = (scale.yAxis[y].Max - scale.yAxis[y].Min) / scale.yAxis[0].NumberOfSteps;
+            scale.yAxis[y].StepValue = Math.ceil((scale.yAxis[y].Max - scale.yAxis[y].Min) / scale.yAxis[0].NumberOfSteps);
+            scale.yAxis[y].Min = scale.yAxis[0].Base - scale.yAxis[y].StepValue * ((scale.yAxis[0].Base - scale.yAxis[0].Min) / scale.yAxis[0].StepValue);
+            scale.yAxis[y].Max = scale.yAxis[0].Base + scale.yAxis[y].StepValue * ((scale.yAxis[0].Max - scale.yAxis[0].Base) / scale.yAxis[0].StepValue);
         }
 
         //populateLabels
